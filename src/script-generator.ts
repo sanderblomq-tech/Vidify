@@ -3,63 +3,70 @@ import type { RawChatScript, ChatMessage, Sender } from "./types.ts";
 
 const MODEL = "llama-3.3-70b-versatile";
 
-const SYSTEM_PROMPT = `You write SHORT, viral fake ARGUMENT/DEBATE conversations for TikTok/YouTube Shorts.
-Two characters with opposing identities argue about who knows more, who is better, or who would win.
-This is a DEBATE — both characters are confident, funny, and trying to one-up each other.
+const SYSTEM_PROMPT = `You write viral fake ARGUMENT/DEBATE conversations for TikTok/YouTube Shorts.
+Two characters argue about who knows more, who is better, or who would win. ALL in ENGLISH.
 
-ALL conversations must be in ENGLISH.
+FORMAT — return JSON only, no prose:
+{ "title": "...", "characterA": "Name 🏷️", "characterB": "Name 🏷️", "messages": [{ "sender": "a" | "b", "text": "..." }] }
 
-FORMAT:
-You must return JSON with:
- - "title": A catchy debate title (e.g. "Who Knows The Streets Better?")
- - "characterA": Character A name + emoji (e.g. "Police 🚔")
- - "characterB": Character B name + emoji (e.g. "Dealer 💊")
- - "messages": Array of { "sender": "a" or "b", "text": "..." }
+=== EXAMPLE OF A PERFECT DEBATE ===
+Topic: "Chef vs Grandma"
+{ "title": "Who Actually Cooks Better?",
+  "characterA": "Chef 👨‍🍳", "characterB": "Grandma 👵",
+  "messages": [
+    { "sender": "a", "text": "I trained in Paris for six years." },
+    { "sender": "b", "text": "I have been cooking since before you were born." },
+    { "sender": "a", "text": "I cook for Michelin star restaurants." },
+    { "sender": "b", "text": "My grandkids cry when they eat your restaurants." },
+    { "sender": "a", "text": "Cry from what? The flavor?" },
+    { "sender": "b", "text": "From disappointment. Then they call me." },
+    { "sender": "a", "text": "Okay name your best dish right now." },
+    { "sender": "b", "text": "My lasagna. It heals broken hearts." },
+    { "sender": "a", "text": "Lasagna is literally the easiest dish ever." },
+    { "sender": "b", "text": "Then why did yours fall apart on national television?" },
+    { "sender": "a", "text": "How do you even know about that?" },
+    { "sender": "b", "text": "Sweetheart I watched it live. I laughed for an hour." },
+    { "sender": "a", "text": "At least I get paid six figures to cook." },
+    { "sender": "b", "text": "I get paid in hugs. And my food is still better." },
+    { "sender": "a", "text": "You cannot even use a food processor." },
+    { "sender": "b", "text": "I do not need one. Everything I make is from the soul." },
+    { "sender": "a", "text": "From the soul does not pass a health inspection." },
+    { "sender": "b", "text": "Your restaurant got a B rating last March." },
+    { "sender": "a", "text": "Wait how do you know that?" },
+    { "sender": "b", "text": "Because I reported it. Who won? You tell me." }
+  ]
+}
 
-THE HOOK — FIRST 3 SECONDS DECIDE EVERYTHING:
-The first message should be a BOLD claim that makes people stop scrolling.
-Examples:
- - "I know every single drug on the street."
- - "I could hack into any system in ten seconds."
- - "Nobody cooks better than me. Nobody."
- - "I have fired more people than you have ever met."
+STUDY that example. Notice:
+ - Every message RESPONDS to what was just said (never random topic jumps)
+ - Specific details: "Paris for six years", "national television", "B rating last March"
+ - TRAPS: Grandma asks about the lasagna → uses the TV fail against him
+ - CALLBACKS: The "how do you know that" payoff connects to earlier knowledge
+ - PERSONALITY: Chef is cocky and formal, Grandma is savage and warm
+ - HUMOR: "I get paid in hugs. And my food is still better."
+ - DEVASTATING ENDING: "Because I reported it." — changes everything
+
+=== RULES ===
+
+1. EVERY message must respond to what was JUST said. No random flexes. This is a real argument.
+2. 16-22 messages. Max 10 words per message.
+3. Use SPECIFIC details: names, numbers, places, dates. Never vague claims.
+4. Each character has a DISTINCT personality. One is not a copy of the other.
+5. Include at least one TRAP (innocent question → answer used as weapon later).
+6. Include at least one CALLBACK (reference something from earlier for a bigger punch).
+7. The ending must be DEVASTATING — a reveal or flip that the viewer did not expect.
+8. LAST message must end with "Who won?" or similar to drive comments.
 
 STRUCTURE:
- - 16-22 messages total, alternating between "a" and "b" (can send 2 in a row for emphasis)
- - Max 10 words per message — SHORT and punchy
- - Act 1 (messages 1-3): Both characters make bold opening claims. Establish the conflict.
- - Act 2 (messages 4-14): ESCALATION — each message is a comeback, a burn, a flex, or a revelation. Every message should make the viewer think "OH SNAP". They challenge each other with facts, experiences, or savage one-liners.
- - Act 3 (last 4-6 messages): CLIMAX — one character drops a DEVASTATING argument or reveal that the other cannot counter. The loser tries to recover but fails. Clear winner.
- - FINAL MESSAGE (ALWAYS): The LAST message must ALWAYS be one of them saying something like "Who won? Comment below." or "Who do you think won?" or "You tell me who won this one." This drives engagement and comments.
+ - Messages 1-4: Bold opening claims from both sides. Hook the viewer.
+ - Messages 5-9: One character CHALLENGES the other to prove something. Trap gets set.
+ - Messages 10-14: Gets personal. Callbacks to earlier messages. The trap pays off.
+ - Messages 15-end: Knockout blow. Loser tries to recover, fails. "Who won?"
 
-WHAT MAKES DEBATES GO VIRAL:
- - Both characters are LIKEABLE and FUNNY — the viewer should enjoy both sides
- - Each response should be a SURPRISE — never predictable
- - Use specific details, not vague claims (say "I made two hundred thousand last Tuesday" not "I make a lot of money")
- - Humor mixed with real flex — funny but also impressive
- - The "winner" wins with something unexpected and clever, not just being louder
- - Escalation should feel natural — each claim slightly bigger than the last
-
-PROVEN DEBATE MATCHUPS:
- - Police vs Drug Dealer (who knows the streets better)
- - Chef vs Grandma (who cooks better)
- - Doctor vs Google (who gives better diagnosis)
- - Teacher vs Student (who is actually smarter)
- - Rich Kid vs Self-Made (who has it harder)
- - Hacker vs FBI Agent (who is better at cyber)
- - Personal Trainer vs Dad Bod (who is actually healthier)
- - Pilot vs Uber Driver (who is the better driver)
-
-LANGUAGE (CRITICAL — messages are read aloud by AI voice):
- - Use casual but PROPER English — full words, no abbreviations
- - NEVER use: "bro", "wdym", "nah", "lol", "omg", "rn", "im", "ur", "ngl", "imo", "tbh", "idk"
- - Sound like confident people TALKING — natural spoken English
- - No emojis in message text — they cannot be spoken
- - Punchy confident lines: "Please.", "That is cute.", "You done?", "Watch and learn.", "Not even close."
-
-Return JSON ONLY, no prose, no code fences.
-
-Schema: { "title": "...", "characterA": "...", "characterB": "...", "messages": [{ "sender": "a" | "b", "text": "..." }] }`;
+LANGUAGE (read aloud by AI voice):
+ - Casual but PROPER English — full words, no abbreviations
+ - NEVER: "bro", "wdym", "nah", "lol", "omg", "rn", "im", "ur", "tbh", "idk"
+ - Sound like real people TALKING — confident, natural, with attitude`;
 
 function stripFences(raw: string): string {
   return raw
