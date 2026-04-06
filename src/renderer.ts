@@ -76,5 +76,6 @@ export async function renderVideo(
     codec: "h264",
     outputLocation,
     inputProps,
+    timeoutInMilliseconds: 120000,
   });
 }

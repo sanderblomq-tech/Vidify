@@ -415,7 +415,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         </div>
       </div>
 
-      {/* Audio sequences */}
+      {/* ── SFX: Intro sounds ── */}
+      {/* Whoosh for character A slide-in */}
+      <Sequence from={Math.round(0.2 * fps)} durationInFrames={Math.round(0.4 * fps)} layout="none">
+        <Audio src={staticFile("sfx/whoosh.mp3")} volume={0.5} />
+      </Sequence>
+      {/* Impact for VS pop */}
+      <Sequence from={Math.round(0.45 * fps)} durationInFrames={Math.round(0.6 * fps)} layout="none">
+        <Audio src={staticFile("sfx/impact.mp3")} volume={0.6} />
+      </Sequence>
+      {/* Whoosh for character B slide-in */}
+      <Sequence from={Math.round(0.6 * fps)} durationInFrames={Math.round(0.4 * fps)} layout="none">
+        <Audio src={staticFile("sfx/whoosh.mp3")} volume={0.5} />
+      </Sequence>
+
+      {/* ── Voice + pop SFX per message ── */}
       {messages.map((msg, i) => {
         const startFrame = Math.round(messageTimings[i].startSec * fps);
         const durationFrames = Math.round(msg.durationSec * fps);
@@ -427,6 +441,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             layout="none"
           >
             <Audio src={staticFile(msg.audioFile)} />
+            <Audio src={staticFile("sfx/pop.mp3")} volume={0.4} />
           </Sequence>
         );
       })}
