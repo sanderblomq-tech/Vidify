@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+videos/
+public/audio/
+public/bg.mp4
+tmp/
+out/
+.DS_Store
+*.log
+dist/
