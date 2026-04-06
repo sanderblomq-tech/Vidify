@@ -1,20 +1,18 @@
 import { Composition } from "remotion";
-import { ChatScreen, ChatScreenSchema } from "./ChatScreen";
+import { ChatScreen, ChatScreenSchema, computeTotalDuration } from "./ChatScreen";
 
 const FPS = 30;
 
 const MOCK_MESSAGES = [
-  { sender: "them" as const, text: "yo can i borrow ur car", audioFile: "mock/0.mp3", durationSec: 1.5 },
-  { sender: "me" as const, text: "for what", audioFile: "mock/1.mp3", durationSec: 0.8 },
-  { sender: "them" as const, text: "just a quick errand", audioFile: "mock/2.mp3", durationSec: 1.2 },
-  { sender: "me" as const, text: "last time u said that", audioFile: "mock/3.mp3", durationSec: 1.5 },
-  { sender: "me" as const, text: "u came back 3 days later", audioFile: "mock/4.mp3", durationSec: 1.8 },
-  { sender: "them" as const, text: "that was different 😭", audioFile: "mock/5.mp3", durationSec: 1.3 },
+  { sender: "a" as const, text: "I know every drug on the street.", audioFile: "mock/0.mp3", durationSec: 1.5 },
+  { sender: "b" as const, text: "And I have arrested every dealer.", audioFile: "mock/1.mp3", durationSec: 1.4 },
+  { sender: "a" as const, text: "You have never caught me though.", audioFile: "mock/2.mp3", durationSec: 1.3 },
+  { sender: "b" as const, text: "Give me one week.", audioFile: "mock/3.mp3", durationSec: 0.9 },
+  { sender: "a" as const, text: "You said that last year too.", audioFile: "mock/4.mp3", durationSec: 1.5 },
+  { sender: "b" as const, text: "Fair point.", audioFile: "mock/5.mp3", durationSec: 0.8 },
 ];
 
-const GAP_SEC = 0.45;
-const MOCK_TOTAL_SEC = MOCK_MESSAGES.reduce((s, m) => s + m.durationSec, 0)
-  + MOCK_MESSAGES.length * GAP_SEC + 1;
+const MOCK_TOTAL_SEC = computeTotalDuration(MOCK_MESSAGES);
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -27,15 +25,14 @@ export const RemotionRoot: React.FC = () => {
       height={1920}
       schema={ChatScreenSchema}
       defaultProps={{
-        contactName: "Bestie 🤡",
+        title: "Who Knows The Streets Better?",
+        characterA: "Dealer 💊",
+        characterB: "Police 🚔",
         messages: MOCK_MESSAGES,
         hasBgVideo: false,
       }}
       calculateMetadata={async ({ props }) => {
-        const totalSec =
-          props.messages.reduce((s, m) => s + m.durationSec, 0) +
-          props.messages.length * GAP_SEC +
-          1;
+        const totalSec = computeTotalDuration(props.messages);
         return {
           durationInFrames: Math.max(1, Math.round(totalSec * FPS)),
         };

@@ -1,56 +1,65 @@
 import Groq from "groq-sdk";
-import type { RawChatScript, ChatMessage } from "./types.ts";
+import type { RawChatScript, ChatMessage, Sender } from "./types.ts";
 
 const MODEL = "llama-3.3-70b-versatile";
 
-const SYSTEM_PROMPT = `You write SHORT, viral fake iMessage conversations for TikTok/YouTube Shorts.
-You are an expert at writing conversations that get millions of views.
+const SYSTEM_PROMPT = `You write SHORT, viral fake ARGUMENT/DEBATE conversations for TikTok/YouTube Shorts.
+Two characters with opposing identities argue about who knows more, who is better, or who would win.
+This is a DEBATE — both characters are confident, funny, and trying to one-up each other.
 
-The conversation is between "me" (blue bubbles, right side) and "them" (grey bubbles, left side).
 ALL conversations must be in ENGLISH.
 
-CRITICAL — THE HOOK DECIDES EVERYTHING:
-The first message MUST make someone stop scrolling INSTANTLY. It should feel urgent, scary, or shocking.
-Message 1 from "them" should be something like:
- - "I know what you did."
- - "Check your front door. Now."
- - "I just saw your boyfriend with someone."
- - "Why did the school just call me?"
- - "Someone is in your house."
- - "I found the other phone."
- - "Do not open that package."
- - "Your mom just called me crying."
-The viewer must think "WAIT WHAT" within 2 seconds.
+FORMAT:
+You must return JSON with:
+ - "title": A catchy debate title (e.g. "Who Knows The Streets Better?")
+ - "characterA": Character A name + emoji (e.g. "Police 🚔")
+ - "characterB": Character B name + emoji (e.g. "Dealer 💊")
+ - "messages": Array of { "sender": "a" or "b", "text": "..." }
+
+THE HOOK — FIRST 3 SECONDS DECIDE EVERYTHING:
+The first message should be a BOLD claim that makes people stop scrolling.
+Examples:
+ - "I know every single drug on the street."
+ - "I could hack into any system in ten seconds."
+ - "Nobody cooks better than me. Nobody."
+ - "I have fired more people than you have ever met."
 
 STRUCTURE:
- - 15-25 messages total, alternating but not strictly (can send 2-3 in a row)
- - Max 8 words per message — SHORT and punchy
- - Act 1 (messages 1-3): INSTANT HOOK — drop the bomb immediately, no small talk, no "hey"
- - Act 2 (messages 4-15): ESCALATION — every single message must add new information or raise stakes. Never repeat the same beat twice.
- - Act 3 (last 3-5 messages): PAYOFF — a genuine plot twist the viewer did NOT see coming. The twist should reframe the entire conversation.
+ - 16-22 messages total, alternating between "a" and "b" (can send 2 in a row for emphasis)
+ - Max 10 words per message — SHORT and punchy
+ - Act 1 (messages 1-3): Both characters make bold opening claims. Establish the conflict.
+ - Act 2 (messages 4-14): ESCALATION — each message is a comeback, a burn, a flex, or a revelation. Every message should make the viewer think "OH SNAP". They challenge each other with facts, experiences, or savage one-liners.
+ - Act 3 (last 4-6 messages): CLIMAX — one character drops a DEVASTATING argument or reveal that the other cannot counter. The loser tries to recover but fails. Clear winner.
+ - FINAL MESSAGE (ALWAYS): The LAST message must ALWAYS be one of them saying something like "Who won? Comment below." or "Who do you think won?" or "You tell me who won this one." This drives engagement and comments.
 
-PROVEN VIRAL FORMULAS:
- - Someone is hiding something and slowly getting caught through contradictions
- - Wrong person gets a screenshot/message meant for someone else
- - Unknown number knows way too much about you — gets creepier each message
- - Catching someone in a lie — they dig deeper and deeper
- - "Do not go outside" / "Do not look behind you" — creepy escalation
- - Friend needs an alibi but the reason keeps getting worse
- - Finding evidence of cheating through innocent questions
- - The twist reveals the ENTIRE conversation meant something different
+WHAT MAKES DEBATES GO VIRAL:
+ - Both characters are LIKEABLE and FUNNY — the viewer should enjoy both sides
+ - Each response should be a SURPRISE — never predictable
+ - Use specific details, not vague claims (say "I made two hundred thousand last Tuesday" not "I make a lot of money")
+ - Humor mixed with real flex — funny but also impressive
+ - The "winner" wins with something unexpected and clever, not just being louder
+ - Escalation should feel natural — each claim slightly bigger than the last
 
-LANGUAGE (THIS IS CRITICAL — messages are read aloud by AI voice):
+PROVEN DEBATE MATCHUPS:
+ - Police vs Drug Dealer (who knows the streets better)
+ - Chef vs Grandma (who cooks better)
+ - Doctor vs Google (who gives better diagnosis)
+ - Teacher vs Student (who is actually smarter)
+ - Rich Kid vs Self-Made (who has it harder)
+ - Hacker vs FBI Agent (who is better at cyber)
+ - Personal Trainer vs Dad Bod (who is actually healthier)
+ - Pilot vs Uber Driver (who is the better driver)
+
+LANGUAGE (CRITICAL — messages are read aloud by AI voice):
  - Use casual but PROPER English — full words, no abbreviations
- - NEVER use: "bro", "wdym", "nah", "lol", "omg", "rn", "im", "ur", "ngl", "imo", "tbh"
- - INSTEAD use: "Wait what?", "Are you serious?", "That makes no sense", "Since when?", "Explain. Now."
- - Sound like a young person TALKING, not texting — natural spoken English
+ - NEVER use: "bro", "wdym", "nah", "lol", "omg", "rn", "im", "ur", "ngl", "imo", "tbh", "idk"
+ - Sound like confident people TALKING — natural spoken English
  - No emojis in message text — they cannot be spoken
- - Short punchy replies build tension: "What?", "No.", "Explain.", "Since when?", "That was you?"
+ - Punchy confident lines: "Please.", "That is cute.", "You done?", "Watch and learn.", "Not even close."
 
- - contactName should be dramatic with 1-2 emojis (e.g. "Emma 💀", "Mom 😭", "Ex 🚩", "Unknown 👀")
- - Return JSON ONLY, no prose, no code fences
+Return JSON ONLY, no prose, no code fences.
 
-Schema: { "contactName": "...", "messages": [{ "sender": "me" | "them", "text": "..." }] }`;
+Schema: { "title": "...", "characterA": "...", "characterB": "...", "messages": [{ "sender": "a" | "b", "text": "..." }] }`;
 
 function stripFences(raw: string): string {
   return raw
@@ -65,17 +74,21 @@ function parseScript(raw: string): RawChatScript {
   if (
     !parsed ||
     typeof parsed !== "object" ||
-    typeof parsed.contactName !== "string" ||
+    typeof parsed.title !== "string" ||
+    typeof parsed.characterA !== "string" ||
+    typeof parsed.characterB !== "string" ||
     !Array.isArray(parsed.messages) ||
     parsed.messages.length === 0
   ) {
-    throw new Error("Script JSON missing 'contactName' or 'messages' array");
+    throw new Error(
+      "Script JSON missing 'title', 'characterA', 'characterB', or 'messages' array",
+    );
   }
 
   for (const msg of parsed.messages) {
     if (
       typeof msg.sender !== "string" ||
-      (msg.sender !== "me" && msg.sender !== "them") ||
+      (msg.sender !== "a" && msg.sender !== "b") ||
       typeof msg.text !== "string" ||
       msg.text.trim().length === 0
     ) {
@@ -84,16 +97,18 @@ function parseScript(raw: string): RawChatScript {
   }
 
   return {
-    contactName: parsed.contactName,
+    title: parsed.title,
+    characterA: parsed.characterA,
+    characterB: parsed.characterB,
     messages: parsed.messages.map((m: ChatMessage) => ({
-      sender: m.sender,
+      sender: m.sender as Sender,
       text: m.text.trim(),
     })),
   };
 }
 
 /**
- * Ask Groq to pick N viral topics for fake iMessage conversations.
+ * Ask Groq to pick N viral debate topics.
  */
 export async function pickTopics(count: number = 3): Promise<string[]> {
   const apiKey = process.env.GROQ_API_KEY;
@@ -108,13 +123,15 @@ export async function pickTopics(count: number = 3): Promise<string[]> {
     messages: [
       {
         role: "system",
-        content: `You pick trending, funny, dramatic scenarios for fake iMessage conversations on TikTok.
-Think: awkward situations, relationship drama, friend group chaos, family texts, work drama.
+        content: `You pick viral debate/argument matchups for TikTok content.
+Think: two opposing characters arguing about who knows more or who is better.
+Examples: "Police vs Drug Dealer", "Chef vs Grandma", "Doctor vs Google", "Hacker vs FBI"
+Each topic should be a specific matchup with a clear conflict.
 Return JSON ONLY: { "topics": ["topic1", "topic2", ...] }`,
       },
       {
         role: "user",
-        content: `Pick ${count} completely different topics. Make them dramatic, funny, and relatable. Keep each topic under 8 words.`,
+        content: `Pick ${count} completely different debate matchups. Make them funny, dramatic, and engaging. Format: "X vs Y" — keep each under 8 words.`,
       },
     ],
   });
@@ -131,7 +148,7 @@ Return JSON ONLY: { "topics": ["topic1", "topic2", ...] }`,
 }
 
 /**
- * Generate a fake iMessage conversation from a topic.
+ * Generate a debate/argument conversation from a topic.
  */
 export async function generateScript(topic: string): Promise<RawChatScript> {
   const apiKey = process.env.GROQ_API_KEY;

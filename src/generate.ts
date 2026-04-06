@@ -99,7 +99,6 @@ async function main() {
     readyToRender.map(({ job, script }) =>
       renderFromScript({
         script,
-        projectRoot,
         serveUrl,
         outputLocation: job.outputLocation,
         onStage: () => {

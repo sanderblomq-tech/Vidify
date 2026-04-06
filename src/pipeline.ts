@@ -54,14 +54,16 @@ export async function prepareAssets({
   const totalDurationSec = messages.reduce((s, m) => s + m.durationSec, 0);
 
   return {
-    contactName: raw.contactName,
+    title: raw.title,
+    characterA: raw.characterA,
+    characterB: raw.characterB,
     messages,
     totalDurationSec,
   };
 }
 
 /**
- * Phase 2: render the chat script to an MP4.
+ * Phase 2: render the debate script to an MP4.
  */
 export async function renderFromScript({
   script,

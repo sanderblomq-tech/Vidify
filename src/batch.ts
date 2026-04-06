@@ -112,7 +112,6 @@ async function main() {
       batch.map(({ job, script }) =>
         renderFromScript({
           script,
-          projectRoot,
           serveUrl,
           outputLocation: job.outputLocation,
           onStage: () => {

@@ -1,4 +1,4 @@
-export type Sender = "me" | "them";
+export type Sender = "a" | "b";
 
 export type ChatMessage = {
   sender: Sender;
@@ -15,13 +15,17 @@ export type ChatMessageWithAudio = {
 
 /** Raw script output from the LLM. */
 export type RawChatScript = {
-  contactName: string;
+  title: string;
+  characterA: string;
+  characterB: string;
   messages: ChatMessage[];
 };
 
 /** A fully-built script ready to hand to Remotion. */
 export type ChatScript = {
-  contactName: string;
+  title: string;
+  characterA: string;
+  characterB: string;
   messages: ChatMessageWithAudio[];
   totalDurationSec: number;
 };

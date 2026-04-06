@@ -11,30 +11,161 @@ import { z } from "zod";
 import { ChatBubble } from "./ChatBubble";
 
 export const ChatMessageSchema = z.object({
-  sender: z.enum(["me", "them"]),
+  sender: z.enum(["a", "b"]),
   text: z.string(),
   audioFile: z.string(),
   durationSec: z.number(),
 });
 
 export const ChatScreenSchema = z.object({
-  contactName: z.string(),
+  title: z.string(),
+  characterA: z.string(),
+  characterB: z.string(),
   messages: z.array(ChatMessageSchema),
   hasBgVideo: z.boolean().optional(),
 });
 
 export type ChatScreenProps = z.infer<typeof ChatScreenSchema>;
 
-const FPS = 30;
-/** Small gap of silence between messages */
-const GAP_SEC = 0.45;
+/* ── Timing constants (must match Root.tsx & renderer.ts) ── */
+export const GAP_SEC = 0.45;
+export const HOLD_SEC = 1.5;
 
-/**
- * iMessage conversation with TTS narration per message.
- * Each bubble appears when its audio starts playing.
- */
+type MessageTiming = { startSec: number; endSec: number };
+
+function computeTimings(
+  messages: { durationSec: number }[],
+): MessageTiming[] {
+  const timings: MessageTiming[] = [];
+  let cumulative = 0;
+
+  for (let i = 0; i < messages.length; i++) {
+    const gap = i < 2 ? 0.2 : GAP_SEC;
+    const startSec = i === 0 ? 0 : cumulative;
+    if (i > 0) cumulative = startSec;
+    const endSec = startSec + messages[i].durationSec;
+    timings.push({ startSec, endSec });
+    cumulative = endSec + gap;
+  }
+
+  return timings;
+}
+
+/** Total video duration in seconds — used by Root.tsx and renderer.ts */
+export function computeTotalDuration(
+  messages: { durationSec: number }[],
+): number {
+  const timings = computeTimings(messages);
+  if (timings.length === 0) return HOLD_SEC;
+  const last = timings[timings.length - 1];
+  return last.endSec + HOLD_SEC;
+}
+
+/* ── Animated gradient fallback background ── */
+const AnimatedBackground: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const t = frame / fps;
+
+  const hue1 = (t * 15) % 360;
+  const hue2 = (hue1 + 140) % 360;
+  const angle = (t * 8) % 360;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: `linear-gradient(${angle}deg, hsl(${hue1}, 60%, 15%), hsl(${hue2}, 70%, 10%))`,
+      }}
+    />
+  );
+};
+
+/* ── "VS" Header ── */
+const DebateHeader: React.FC<{
+  title: string;
+  characterA: string;
+  characterB: string;
+}> = ({ title, characterA, characterB }) => (
+  <div
+    style={{
+      padding: "24px 28px 20px",
+      borderBottom: "1px solid rgba(255,255,255,0.1)",
+    }}
+  >
+    {/* Title */}
+    <div
+      style={{
+        textAlign: "center",
+        color: "rgba(255,255,255,0.6)",
+        fontSize: 24,
+        fontFamily: "-apple-system, sans-serif",
+        fontWeight: 500,
+        marginBottom: 16,
+        letterSpacing: 1,
+        textTransform: "uppercase",
+      }}
+    >
+      {title}
+    </div>
+
+    {/* Character A  VS  Character B */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 20,
+      }}
+    >
+      <span
+        style={{
+          color: "#5AC8FA",
+          fontSize: 32,
+          fontWeight: 700,
+          fontFamily: "-apple-system, sans-serif",
+          textAlign: "right",
+          flex: 1,
+        }}
+      >
+        {characterA}
+      </span>
+
+      <span
+        style={{
+          color: "#fff",
+          fontSize: 28,
+          fontWeight: 900,
+          fontFamily: "'Archivo Black', Impact, sans-serif",
+          letterSpacing: 3,
+          opacity: 0.9,
+        }}
+      >
+        VS
+      </span>
+
+      <span
+        style={{
+          color: "#FF9500",
+          fontSize: 32,
+          fontWeight: 700,
+          fontFamily: "-apple-system, sans-serif",
+          textAlign: "left",
+          flex: 1,
+        }}
+      >
+        {characterB}
+      </span>
+    </div>
+  </div>
+);
+
+/* ── Main Composition ── */
 export const ChatScreen: React.FC<ChatScreenProps> = ({
-  contactName,
+  title,
+  characterA,
+  characterB,
   messages,
   hasBgVideo = false,
 }) => {
@@ -42,29 +173,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const { fps } = useVideoConfig();
   const t = frame / fps;
 
-  // Calculate start time for each message
-  // First message starts immediately (no gap), then normal gap after
-  const messageTimings: { startSec: number; endSec: number }[] = [];
-  let cumulative = 0;
-  for (let i = 0; i < messages.length; i++) {
-    const startSec = cumulative;
-    const endSec = startSec + messages[i].durationSec;
-    messageTimings.push({ startSec, endSec });
-    // Shorter gap after first few messages to feel fast, then normal
-    const gap = i < 2 ? 0.2 : GAP_SEC;
-    cumulative = endSec + gap;
-  }
+  const messageTimings = computeTimings(messages);
 
-  // How many messages are visible at current time
+  // How many messages are visible
   const visibleCount = messageTimings.filter((mt) => t >= mt.startSec).length;
   const visibleMessages = messages.slice(0, visibleCount);
 
-  // Show max 7 messages, scroll older ones
+  // Scroll: keep latest N messages visible
   const maxVisible = 7;
   const scrollStart = Math.max(0, visibleCount - maxVisible);
   const displayMessages = visibleMessages.slice(scrollStart);
 
-  // Latest bubble animation
+  // Animate latest bubble
   const latestIdx = visibleCount - 1;
   const latestStart = latestIdx >= 0 ? messageTimings[latestIdx].startSec : 0;
   const latestAge = t - latestStart;
@@ -72,7 +192,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   return (
     <AbsoluteFill>
-      {/* Background */}
+      {/* Background — Minecraft gameplay or gradient fallback */}
       {hasBgVideo ? (
         <OffthreadVideo
           src={staticFile("bg.mp4")}
@@ -96,95 +216,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         }}
       >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "20px 24px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span
-              style={{
-                color: "#007AFF",
-                fontSize: 40,
-                fontFamily: "-apple-system, sans-serif",
-                fontWeight: 300,
-                lineHeight: 1,
-              }}
-            >
-              ‹
-            </span>
-            <span
-              style={{
-                fontFamily: "-apple-system, sans-serif",
-                backgroundColor: "#007AFF",
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: 18,
-                fontWeight: 600,
-              }}
-            >
-              6
-            </span>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
-                backgroundColor: "#636366",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 4,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 24,
-                  fontWeight: 600,
-                  color: "#fff",
-                  fontFamily: "-apple-system, sans-serif",
-                }}
-              >
-                {contactName
-                  .replace(/[\p{Emoji}\u200d\ufe0f]/gu, "")
-                  .trim()
-                  .charAt(0)
-                  .toUpperCase()}
-              </span>
-            </div>
-            <span
-              style={{
-                color: "#fff",
-                fontFamily: "-apple-system, sans-serif",
-                fontSize: 26,
-                fontWeight: 600,
-              }}
-            >
-              {contactName}
-            </span>
-          </div>
-
-          <span style={{ fontSize: 28 }}>📹</span>
-        </div>
+        {/* Debate header */}
+        <DebateHeader
+          title={title}
+          characterA={characterA}
+          characterB={characterB}
+        />
 
         {/* Messages */}
         <div style={{ padding: "16px 16px 24px", minHeight: 200 }}>
@@ -202,14 +239,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                   transform: `translateY(${translateY}px)`,
                 }}
               >
-                <ChatBubble sender={msg.sender} text={msg.text} />
+                <ChatBubble
+                  sender={msg.sender}
+                  text={msg.text}
+                  characterA={characterA}
+                  characterB={characterB}
+                />
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Audio sequences — each message gets its own audio */}
+      {/* Audio sequences */}
       {messages.map((msg, i) => {
         const startFrame = Math.round(messageTimings[i].startSec * fps);
         const durationFrames = Math.round(msg.durationSec * fps);
@@ -225,25 +267,5 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         );
       })}
     </AbsoluteFill>
-  );
-};
-
-const AnimatedBackground: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = frame / fps;
-
-  const hue1 = (t * 15) % 360;
-  const hue2 = (hue1 + 140) % 360;
-  const angle = (t * 8) % 360;
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: `linear-gradient(${angle}deg, hsl(${hue1}, 60%, 15%), hsl(${hue2}, 70%, 10%))`,
-      }}
-    />
   );
 };

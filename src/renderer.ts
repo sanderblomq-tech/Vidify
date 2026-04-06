@@ -6,7 +6,10 @@ import type { ChatScript } from "./types.ts";
 
 const COMPOSITION_ID = "VidifyChat";
 const FPS = 30;
-const GAP_SEC = 0.45; // must match ChatScreen.tsx
+
+/* Timing constants — must match remotion/ChatScreen.tsx */
+const GAP_SEC = 0.45;
+const HOLD_SEC = 1.5;
 
 let cachedServeUrl: string | null = null;
 let cachedHasBgVideo = false;
@@ -27,8 +30,19 @@ export async function prepareBundle(projectRoot: string): Promise<string> {
   return serveUrl;
 }
 
+function computeTotalDuration(
+  messages: { durationSec: number }[],
+): number {
+  let cumulative = 0;
+  for (let i = 0; i < messages.length; i++) {
+    const gap = i < 2 ? 0.2 : GAP_SEC;
+    cumulative += messages[i].durationSec + gap;
+  }
+  return cumulative + HOLD_SEC;
+}
+
 /**
- * Render a chat video with TTS audio.
+ * Render a debate video with TTS audio.
  */
 export async function renderVideo(
   serveUrl: string,
@@ -36,7 +50,9 @@ export async function renderVideo(
   outputLocation: string,
 ): Promise<void> {
   const inputProps = {
-    contactName: script.contactName,
+    title: script.title,
+    characterA: script.characterA,
+    characterB: script.characterB,
     messages: script.messages,
     hasBgVideo: cachedHasBgVideo,
   };
@@ -47,11 +63,7 @@ export async function renderVideo(
     inputProps,
   });
 
-  // Total duration = sum of all message durations + gaps + 1s hold
-  const totalSec =
-    script.totalDurationSec +
-    script.messages.length * GAP_SEC +
-    1;
+  const totalSec = computeTotalDuration(script.messages);
   const totalFrames = Math.max(1, Math.round(totalSec * FPS));
 
   await renderMedia({
