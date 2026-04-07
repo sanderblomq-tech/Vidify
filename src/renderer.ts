@@ -55,6 +55,7 @@ export async function renderVideo(
     characterA: script.characterA,
     characterB: script.characterB,
     messages: script.messages,
+    twistIndex: script.twistIndex,
     hasBgVideo: cachedHasBgVideo,
   };
 

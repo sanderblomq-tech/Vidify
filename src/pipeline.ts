@@ -59,6 +59,7 @@ export async function prepareAssets({
     characterB: raw.characterB,
     messages,
     totalDurationSec,
+    twistIndex: raw.twistIndex,
   };
 }
 

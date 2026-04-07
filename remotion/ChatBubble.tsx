@@ -5,6 +5,7 @@ export type ChatBubbleProps = {
   sender: Sender;
   characterA: string;
   characterB: string;
+  receipt?: "none" | "delivered" | "read";
 };
 
 /**
@@ -14,6 +15,7 @@ export type ChatBubbleProps = {
 export const ChatBubble: React.FC<ChatBubbleProps> = ({
   text,
   sender,
+  receipt = "none",
 }) => {
   const isA = sender === "a";
 
@@ -47,6 +49,24 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
       >
         {text}
       </div>
+
+      {/* Read receipt — only for Character B (sent messages) */}
+      {!isA && receipt !== "none" && (
+        <div
+          style={{
+            fontFamily:
+              "-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif",
+            fontSize: 16,
+            fontWeight: 400,
+            color: receipt === "read" ? "#007AFF" : "#8E8E93",
+            marginTop: 3,
+            marginRight: 4,
+            letterSpacing: "-0.2px",
+          }}
+        >
+          {receipt === "read" ? "Read" : "Delivered"}
+        </div>
+      )}
     </div>
   );
 };

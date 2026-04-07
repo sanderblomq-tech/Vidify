@@ -6,8 +6,14 @@ import type { Sender } from "./types.ts";
 
 /** Two distinct voices — female (a) and male (b) */
 const VOICES: Record<Sender, string> = {
-  a: process.env.VOICE_A || "en-US-AvaMultilingualNeural",
-  b: process.env.VOICE_B || "en-US-AndrewMultilingualNeural",
+  a: process.env.VOICE_A || "en-US-JennyNeural",
+  b: process.env.VOICE_B || "en-US-GuyNeural",
+};
+
+/** Prosody tuning per character — makes voices more distinct and expressive */
+const PROSODY: Record<Sender, { rate: number; pitch: string }> = {
+  a: { rate: 8, pitch: "+30Hz" },   // Slightly faster, brighter
+  b: { rate: -5, pitch: "-20Hz" },  // Slower, deeper — more gravitas
 };
 
 export type TtsResult = {
@@ -55,8 +61,11 @@ export async function synthesizeMessage(
 
   // Retry up to 3 times if TTS produces invalid output
   for (let attempt = 0; attempt < 3; attempt++) {
+    const prosody = PROSODY[sender];
     const tts = new EdgeTTS();
     await tts.synthesize(text, voice, {
+      rate: prosody.rate,
+      pitch: prosody.pitch,
       outputFormat: Constants.OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
     });
     await tts.toFile(join(absDir, `${baseName}.raw`));

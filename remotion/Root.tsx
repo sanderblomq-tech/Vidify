@@ -4,18 +4,18 @@ import { ChatScreen, ChatScreenSchema, computeTotalDuration } from "./ChatScreen
 const FPS = 30;
 
 const MOCK_MESSAGES = [
-  { sender: "a" as const, text: "I am making two hundred a month right now.", audioFile: "mock/0.mp3", durationSec: 1.4 },
-  { sender: "b" as const, text: "I just graduated police school. Two thousand a month.", audioFile: "mock/1.mp3", durationSec: 1.5 },
-  { sender: "a" as const, text: "Six months in. Moving product. Eight hundred now.", audioFile: "mock/2.mp3", durationSec: 1.4 },
-  { sender: "b" as const, text: "Still training. But my rent is covered.", audioFile: "mock/3.mp3", durationSec: 1.3 },
-  { sender: "a" as const, text: "One year in. Ten K a month from shipments.", audioFile: "mock/4.mp3", durationSec: 1.4 },
-  { sender: "b" as const, text: "I am on patrol. Two point two K.", audioFile: "mock/5.mp3", durationSec: 1.3 },
-  { sender: "a" as const, text: "Year three. Thirty K a month. You still stuck?", audioFile: "mock/6.mp3", durationSec: 1.4 },
-  { sender: "b" as const, text: "I made detective. Three point four K now.", audioFile: "mock/7.mp3", durationSec: 1.3 },
+  { sender: "a" as const, text: "Two hundred a month. Starting small.", audioFile: "mock/0.mp3", durationSec: 1.2 },
+  { sender: "b" as const, text: "Just graduated. Two thousand a month.", audioFile: "mock/1.mp3", durationSec: 1.3 },
+  { sender: "a" as const, text: "Six months. Eight hundred now.", audioFile: "mock/2.mp3", durationSec: 1.1 },
+  { sender: "b" as const, text: "Still training. Rent is covered though.", audioFile: "mock/3.mp3", durationSec: 1.3 },
+  { sender: "a" as const, text: "One year. Ten K a month.", audioFile: "mock/4.mp3", durationSec: 1.1 },
+  { sender: "b" as const, text: "Patrol. Two point two K.", audioFile: "mock/5.mp3", durationSec: 1.1 },
+  { sender: "a" as const, text: "Year three. Thirty K. You still stuck?", audioFile: "mock/6.mp3", durationSec: 1.4 },
+  { sender: "b" as const, text: "Made detective. Three point four K.", audioFile: "mock/7.mp3", durationSec: 1.3 },
   { sender: "a" as const, text: "Detective? I made more last Tuesday.", audioFile: "mock/8.mp3", durationSec: 1.3 },
-  { sender: "b" as const, text: "Interesting. What were you doing last Tuesday?", audioFile: "mock/9.mp3", durationSec: 1.4 },
-  { sender: "a" as const, text: "Five years in. I run the whole east side.", audioFile: "mock/10.mp3", durationSec: 1.4 },
-  { sender: "b" as const, text: "Five years in. I just signed the warrant for the east side. Who won?", audioFile: "mock/11.mp3", durationSec: 1.9 },
+  { sender: "b" as const, text: "Funny. What were you doing last Tuesday?", audioFile: "mock/9.mp3", durationSec: 1.4 },
+  { sender: "a" as const, text: "Five years. I run the whole east side.", audioFile: "mock/10.mp3", durationSec: 1.4 },
+  { sender: "b" as const, text: "Five years. I just signed your arrest warrant.", audioFile: "mock/11.mp3", durationSec: 1.8 },
 ];
 
 const MOCK_TOTAL_SEC = computeTotalDuration(MOCK_MESSAGES);
@@ -35,6 +35,7 @@ export const RemotionRoot: React.FC = () => {
         characterA: "Criminal 💰",
         characterB: "Police 🚔",
         messages: MOCK_MESSAGES,
+        twistIndex: 9,
         hasBgVideo: false,
       }}
       calculateMetadata={async ({ props }) => {

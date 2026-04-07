@@ -13,12 +13,15 @@ export type ChatMessageWithAudio = {
   durationSec: number;
 };
 
+export type CharacterId = Sender;
+
 /** Raw script output from the LLM. */
 export type RawChatScript = {
   title: string;
   characterA: string;
   characterB: string;
   messages: ChatMessage[];
+  twistIndex: number;
 };
 
 /** A fully-built script ready to hand to Remotion. */
@@ -28,4 +31,5 @@ export type ChatScript = {
   characterB: string;
   messages: ChatMessageWithAudio[];
   totalDurationSec: number;
+  twistIndex: number;
 };
