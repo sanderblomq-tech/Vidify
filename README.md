@@ -1,95 +1,111 @@
 # Vidify
 
-CLI tool that generates 15-20s TikTok-style stick figure skits about AI.
-Two hand-drawn characters — **Blipp** (skeptical, dry) and **Zorp** (hyped,
-over-the-top) — banter about whatever topic you hand it, with voices synthesized
-by ElevenLabs and animation rendered by Remotion.
+**Generate viral TikTok/YouTube Shorts conversations in one command.**
 
-One command → 3 ready-to-upload MP4s in `videos/`.
+Vidify creates fake iMessage-style conversation videos — complete with AI-written scripts, text-to-speech voices, typing indicators, and animated stick figures. Give it a topic, get back 3 ready-to-upload vertical videos.
 
-## Setup
+Two content styles:
+- **Timeline Battles** — "Criminal vs Police — who earns more in 5 years"
+- **Partner Drama** — "Boyfriend catches girlfriend texting her ex"
 
-1. Install dependencies:
+https://github.com/user-attachments/assets/placeholder
 
-   ```bash
-   npm install
-   ```
+> One command. Three videos. Zero editing.
 
-2. Copy `.env.example` to `.env` and fill in:
+---
 
-   ```bash
-   cp .env.example .env
-   ```
-
-   You need:
-   - `ANTHROPIC_API_KEY` — from https://console.anthropic.com
-   - `ELEVENLABS_API_KEY` — from https://elevenlabs.io/app/settings/api-keys
-   - `VOICE_ID_A` — a dry/low voice for Blipp (browse https://elevenlabs.io/app/voice-library)
-   - `VOICE_ID_B` — an energetic/high voice for Zorp
-
-## Usage
+## Quick Start
 
 ```bash
-npm run generate -- "GPT-5 rumors"
+# 1. Install dependencies
+npm install
+
+# 2. Set up environment variables
+cp .env.example .env
+# Add your GROQ_API_KEY (get one at https://console.groq.com)
+
+# 3. Generate videos
+npm run generate -- "Criminal vs Police — who earns more"
 ```
 
-Output:
+Output lands on your Desktop in `videfy videos/` as 1080×1920 MP4s, ready to upload.
 
-```
-🎬 Vidify — generating 3 videos about "GPT-5 rumors"
-   bundling Remotion composition...
-   [1/3] writing script
-   [2/3] writing script
-   [3/3] writing script
-   [1/3] generating voices
-   ...
-   [1/3] ✓ videos/gpt-5-rumors-abc123-1.mp4
-   [2/3] ✓ videos/gpt-5-rumors-abc123-2.mp4
-   [3/3] ✓ videos/gpt-5-rumors-abc123-3.mp4
-Done in 2m 14s — 3/3 videos rendered.
+## Batch Mode
+
+Generate multiple topics at once with auto-picked viral prompts:
+
+```bash
+npm run batch
 ```
 
-Videos land in `videos/` as `{slug}-{runId}-{1|2|3}.mp4`, 1080×1920, ~15-20s,
-H.264 + AAC. Drag them into your TikTok drafts.
+## Preview in Remotion Studio
 
-## Preview a single video in Remotion Studio
-
-To tweak the visual look with mock data:
+Tweak visuals without regenerating audio:
 
 ```bash
 npm run studio
 ```
 
-This opens the Remotion Studio in your browser with the default mock script.
-(Audio won't play since the mock mp3s don't exist — that's fine; you're just
-previewing visuals.)
+---
 
-## How it works
+## How It Works
 
-1. **Script** — Claude generates a 4-6 line skit as JSON (`src/script-generator.ts`)
-2. **Voices** — ElevenLabs synthesizes each line with word-level timestamps (`src/tts.ts`)
-3. **Render** — Remotion animates SVG stick figures with lip-flap driven by
-   the timestamps, then exports H.264 MP4 (`remotion/Video.tsx`, `src/renderer.ts`)
+```
+Topic → Script → Voices → Video
+```
 
-All three videos in a batch share the same topic but get different scripts
-(Claude runs at `temperature: 0.9`).
+1. **Script** — Groq (Llama 3.3 70B) writes a 10-14 message conversation with a built-in twist moment
+2. **Voices** — Edge TTS synthesizes each line with word-level timestamps (female + male voices)
+3. **Render** — Remotion composites everything into a vertical MP4: chat bubbles, stick figures with lip-sync, captions, typing dots, and screen shake on the twist
 
-## Project layout
+All three videos share the same topic but get unique scripts (`temperature: 0.9`).
+
+## Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Script generation | [Groq](https://groq.com) + Llama 3.3 70B |
+| Text-to-speech | [Edge TTS](https://github.com/nicholasgasior/edge-tts) (free, no API key needed) |
+| Video rendering | [Remotion](https://remotion.dev) |
+| Runtime | Node.js + TypeScript |
+
+## Project Structure
 
 ```
 src/
-  generate.ts           CLI entry point
-  pipeline.ts           script → tts → render for one video
-  script-generator.ts   Claude API wrapper
-  tts.ts                ElevenLabs wrapper
-  renderer.ts           Remotion bundler + renderer
-  types.ts              Shared types & character config
+  generate.ts          CLI entry — generates 3 videos for a topic
+  batch.ts             Batch mode — auto-picks topics and generates
+  script-generator.ts  Groq prompt + JSON parser
+  tts.ts               Edge TTS with word-level timestamps
+  pipeline.ts          Orchestrates script → TTS → render
+  renderer.ts          Remotion bundler + renderer
+  types.ts             Shared types
+
 remotion/
-  index.ts              registerRoot
-  Root.tsx              Composition registration
-  Video.tsx             Main composition (sequences + lip-flap)
-  StickFigure.tsx       SVG character
-  Whiteboard.tsx        Background with grid
-public/audio/           Generated mp3s (gitignored)
-videos/                 Rendered MP4s (gitignored)
+  Video.tsx            Main composition (audio sequences + lip-sync)
+  ChatBubble.tsx       iMessage-style chat bubbles
+  ChatScreen.tsx       Full chat screen layout
+  StickFigure.tsx      SVG stick figure with expressions
+  Caption.tsx          Big meme-style word captions
+  Background.tsx       Gradient backgrounds
+  TypingIndicator.tsx  Typing dots animation
+  Camera.tsx           Screen shake on twist moments
+  Doodle.tsx           Hand-drawn doodle overlays
 ```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GROQ_API_KEY` | Yes | API key from [Groq Console](https://console.groq.com) |
+| `VOICE_A` | No | Edge TTS voice for character A (default: `en-US-JennyNeural`) |
+| `VOICE_B` | No | Edge TTS voice for character B (default: `en-US-GuyNeural`) |
+
+## Requirements
+
+- Node.js 18+
+- ffmpeg (for audio probing)
+
+## License
+
+MIT
