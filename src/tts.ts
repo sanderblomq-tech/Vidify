@@ -4,10 +4,10 @@ import { join } from "node:path";
 import { EdgeTTS, Constants } from "@andresaya/edge-tts";
 import type { Sender } from "./types.ts";
 
-/** Two distinct voices for the debate characters */
+/** Two distinct voices — female (a) and male (b) */
 const VOICES: Record<Sender, string> = {
-  a: process.env.VOICE_A || "en-US-AndrewMultilingualNeural",
-  b: process.env.VOICE_B || "en-US-BrianMultilingualNeural",
+  a: process.env.VOICE_A || "en-US-AvaMultilingualNeural",
+  b: process.env.VOICE_B || "en-US-AndrewMultilingualNeural",
 };
 
 export type TtsResult = {

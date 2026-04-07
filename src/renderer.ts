@@ -8,9 +8,9 @@ const COMPOSITION_ID = "VidifyChat";
 const FPS = 30;
 
 /* Timing constants — must match remotion/ChatScreen.tsx */
-const INTRO_SEC = 2.5;
-const GAP_SEC = 0.45;
-const HOLD_SEC = 1.5;
+const INTRO_SEC = 1.5;
+const GAP_SEC = 0.3;
+const HOLD_SEC = 0.8;
 
 let cachedServeUrl: string | null = null;
 let cachedHasBgVideo = false;

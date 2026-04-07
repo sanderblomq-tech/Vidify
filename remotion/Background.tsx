@@ -37,3 +37,4 @@ export const Background: React.FC<BackgroundProps> = ({ lineIdx }) => {
     </AbsoluteFill>
   );
 };
+

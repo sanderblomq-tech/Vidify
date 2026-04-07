@@ -28,9 +28,9 @@ export const ChatScreenSchema = z.object({
 export type ChatScreenProps = z.infer<typeof ChatScreenSchema>;
 
 /* ── Timing constants (must match renderer.ts) ── */
-export const INTRO_SEC = 2.5;
-export const GAP_SEC = 0.45;
-export const HOLD_SEC = 1.5;
+export const INTRO_SEC = 1.5;
+export const GAP_SEC = 0.3;
+export const HOLD_SEC = 0.8;
 
 type MessageTiming = { startSec: number; endSec: number };
 
@@ -61,27 +61,6 @@ export function computeTotalDuration(
   return last.endSec + HOLD_SEC;
 }
 
-/* ── Animated gradient fallback background ── */
-const AnimatedBackground: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const t = frame / fps;
-
-  const hue1 = (t * 15) % 360;
-  const hue2 = (hue1 + 140) % 360;
-  const angle = (t * 8) % 360;
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: `linear-gradient(${angle}deg, hsl(${hue1}, 60%, 15%), hsl(${hue2}, 70%, 10%))`,
-      }}
-    />
-  );
-};
-
 /* ── INTRO HOOK — big VS splash screen ── */
 const IntroHook: React.FC<{
   t: number;
@@ -89,45 +68,45 @@ const IntroHook: React.FC<{
   characterB: string;
   title: string;
 }> = ({ t, characterA, characterB, title }) => {
-  // Animation timeline (seconds)
-  // 0.0-0.3: dark overlay fades in
-  // 0.3-0.6: character A snaps in from left
-  // 0.5-0.8: "VS" pops in with scale
-  // 0.7-1.0: character B snaps in from right
-  // 1.0-1.4: title fades in
-  // 1.4-2.2: hold
-  // 2.2-2.5: everything fades out
+  // Animation timeline (seconds) — compressed for 1.5s intro
+  // 0.0-0.15: dark overlay fades in
+  // 0.1-0.25: character A snaps in from left
+  // 0.25-0.4: "VS" pops in with scale
+  // 0.35-0.5: character B snaps in from right
+  // 0.5-0.7: title fades in
+  // 0.7-1.2: hold
+  // 1.2-1.5: everything fades out
 
-  const fadeIn = Math.min(1, t / 0.3);
-  const fadeOut = t > 2.2 ? 1 - Math.min(1, (t - 2.2) / 0.3) : 1;
+  const fadeIn = Math.min(1, t / 0.15);
+  const fadeOut = t > 1.2 ? 1 - Math.min(1, (t - 1.2) / 0.3) : 1;
   const masterOpacity = fadeIn * fadeOut;
 
   if (masterOpacity <= 0) return null;
 
   // Character A: slides from left
-  const aProgress = Math.min(1, Math.max(0, (t - 0.2) / 0.25));
+  const aProgress = Math.min(1, Math.max(0, (t - 0.1) / 0.15));
   const aEased = 1 - Math.pow(1 - aProgress, 3);
   const aX = -300 + 300 * aEased;
   const aOpacity = aProgress;
 
   // VS: scale pop
-  const vsProgress = Math.min(1, Math.max(0, (t - 0.45) / 0.2));
+  const vsProgress = Math.min(1, Math.max(0, (t - 0.25) / 0.15));
   const vsEased = 1 - Math.pow(1 - vsProgress, 3);
   const vsScale = 0.3 + 0.7 * vsEased;
   const vsOpacity = vsProgress;
 
   // Character B: slides from right
-  const bProgress = Math.min(1, Math.max(0, (t - 0.6) / 0.25));
+  const bProgress = Math.min(1, Math.max(0, (t - 0.35) / 0.15));
   const bEased = 1 - Math.pow(1 - bProgress, 3);
   const bX = 300 - 300 * bEased;
   const bOpacity = bProgress;
 
   // Title: fades in
-  const titleProgress = Math.min(1, Math.max(0, (t - 0.9) / 0.3));
+  const titleProgress = Math.min(1, Math.max(0, (t - 0.5) / 0.2));
   const titleOpacity = titleProgress;
 
   // Pulse glow on VS
-  const vsPulse = t > 0.65 ? 1 + Math.sin((t - 0.65) * 8) * 0.06 : vsScale;
+  const vsPulse = t > 0.4 ? 1 + Math.sin((t - 0.4) * 10) * 0.06 : vsScale;
 
   return (
     <div
@@ -152,9 +131,9 @@ const IntroHook: React.FC<{
             "'Archivo Black', 'Anton', Impact, 'Helvetica Neue', sans-serif",
           fontSize: 100,
           fontWeight: 900,
-          color: "#5AC8FA",
+          color: "#007AFF",
           textShadow:
-            "0 0 40px rgba(90,200,250,0.5), 0 4px 20px rgba(0,0,0,0.8)",
+            "0 0 40px rgba(0,122,255,0.5), 0 4px 20px rgba(0,0,0,0.8)",
           textAlign: "center",
           lineHeight: 1.2,
           marginBottom: 30,
@@ -192,9 +171,9 @@ const IntroHook: React.FC<{
             "'Archivo Black', 'Anton', Impact, 'Helvetica Neue', sans-serif",
           fontSize: 100,
           fontWeight: 900,
-          color: "#FF9500",
+          color: "#34C759",
           textShadow:
-            "0 0 40px rgba(255,149,0,0.5), 0 4px 20px rgba(0,0,0,0.8)",
+            "0 0 40px rgba(52,199,89,0.5), 0 4px 20px rgba(0,0,0,0.8)",
           textAlign: "center",
           lineHeight: 1.2,
           marginBottom: 50,
@@ -225,81 +204,113 @@ const IntroHook: React.FC<{
   );
 };
 
-/* ── "VS" Header in chat card ── */
-const DebateHeader: React.FC<{
+/* ── iOS Messages app header (authentic look) ── */
+const MessagesHeader: React.FC<{
   title: string;
-  characterA: string;
-  characterB: string;
-}> = ({ title, characterA, characterB }) => (
+}> = ({ title }) => (
   <div
     style={{
-      padding: "24px 28px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.1)",
+      backgroundColor: "#1C1C1E",
+      padding: "14px 16px 12px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      position: "relative",
     }}
   >
-    {/* Title */}
+    {/* Back arrow — left side */}
     <div
       style={{
-        textAlign: "center",
-        color: "rgba(255,255,255,0.6)",
-        fontSize: 24,
-        fontFamily: "-apple-system, sans-serif",
-        fontWeight: 500,
-        marginBottom: 16,
-        letterSpacing: 1,
-        textTransform: "uppercase",
+        position: "absolute",
+        left: 16,
+        top: 18,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
       }}
     >
-      {title}
+      {/* Chevron */}
+      <span
+        style={{
+          color: "#007AFF",
+          fontSize: 32,
+          fontWeight: 300,
+          fontFamily: "-apple-system, sans-serif",
+          lineHeight: 1,
+        }}
+      >
+        ‹
+      </span>
+      {/* Badge */}
+      <div
+        style={{
+          backgroundColor: "#007AFF",
+          borderRadius: 12,
+          width: 28,
+          height: 28,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span
+          style={{
+            color: "#fff",
+            fontSize: 17,
+            fontWeight: 600,
+            fontFamily: "-apple-system, sans-serif",
+          }}
+        >
+          2
+        </span>
+      </div>
     </div>
 
-    {/* Character A  VS  Character B */}
+    {/* FaceTime icon — right side */}
     <div
       style={{
+        position: "absolute",
+        right: 16,
+        top: 18,
+      }}
+    >
+      <svg width="30" height="22" viewBox="0 0 30 22" fill="none">
+        <rect x="0" y="2" width="20" height="18" rx="4" fill="#007AFF" />
+        <path d="M22 7l6-3v14l-6-3V7z" fill="#007AFF" />
+      </svg>
+    </div>
+
+    {/* Contact avatar */}
+    <div
+      style={{
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: "#636366",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 20,
+        marginBottom: 6,
       }}
     >
-      <span
-        style={{
-          color: "#5AC8FA",
-          fontSize: 32,
-          fontWeight: 700,
-          fontFamily: "-apple-system, sans-serif",
-          textAlign: "right",
-          flex: 1,
-        }}
-      >
-        {characterA}
-      </span>
+      {/* Person silhouette */}
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="10" r="5.5" fill="#AEAEB2" />
+        <ellipse cx="14" cy="25" rx="9" ry="7" fill="#AEAEB2" />
+      </svg>
+    </div>
 
-      <span
-        style={{
-          color: "#fff",
-          fontSize: 28,
-          fontWeight: 900,
-          fontFamily: "'Archivo Black', Impact, sans-serif",
-          letterSpacing: 3,
-          opacity: 0.9,
-        }}
-      >
-        VS
-      </span>
-
-      <span
-        style={{
-          color: "#FF9500",
-          fontSize: 32,
-          fontWeight: 700,
-          fontFamily: "-apple-system, sans-serif",
-          textAlign: "left",
-          flex: 1,
-        }}
-      >
-        {characterB}
-      </span>
+    {/* Contact name */}
+    <div
+      style={{
+        color: "#fff",
+        fontSize: 22,
+        fontWeight: 600,
+        fontFamily: "-apple-system, 'SF Pro Text', sans-serif",
+        textAlign: "center",
+      }}
+    >
+      {title}
     </div>
   </div>
 );
@@ -310,7 +321,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   characterA,
   characterB,
   messages,
-  hasBgVideo = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -318,7 +328,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const messageTimings = computeTimings(messages);
 
-  // Chat time = time since intro ended
   const chatT = t;
 
   // How many messages are visible
@@ -340,20 +349,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const latestProgress = Math.min(1, latestAge / 0.15);
 
   // Show chat card only after intro
-  const chatOpacity = Math.min(1, Math.max(0, (t - (INTRO_SEC - 0.4)) / 0.4));
+  const chatOpacity = Math.min(1, Math.max(0, (t - (INTRO_SEC - 0.3)) / 0.3));
 
   return (
     <AbsoluteFill>
-      {/* Background — Minecraft gameplay or gradient fallback */}
-      {hasBgVideo ? (
-        <OffthreadVideo
-          src={staticFile("bg.mp4")}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          muted
-        />
-      ) : (
-        <AnimatedBackground />
-      )}
+      {/* Background — always Minecraft gameplay */}
+      <OffthreadVideo
+        src={staticFile("bg.mp4")}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        muted
+      />
 
       {/* Intro hook — VS splash screen */}
       {t < INTRO_SEC && (
@@ -365,30 +370,26 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         />
       )}
 
-      {/* Floating chat card — fades in as intro ends */}
+      {/* Floating iOS Messages island */}
       <div
         style={{
           position: "absolute",
-          top: 200,
-          left: 40,
-          right: 40,
-          borderRadius: 30,
+          top: 180,
+          left: 36,
+          right: 36,
+          borderRadius: 40,
           overflow: "hidden",
-          backgroundColor: "rgba(0, 0, 0, 0.82)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+          backgroundColor: "#000",
+          boxShadow: "0 12px 50px rgba(0,0,0,0.4), 0 2px 10px rgba(0,0,0,0.2)",
           opacity: chatOpacity,
           transform: `translateY(${(1 - chatOpacity) * 30}px)`,
         }}
       >
-        {/* Debate header */}
-        <DebateHeader
-          title={title}
-          characterA={characterA}
-          characterB={characterB}
-        />
+        {/* iOS Messages header */}
+        <MessagesHeader title={title} />
 
         {/* Messages */}
-        <div style={{ padding: "16px 16px 24px", minHeight: 200 }}>
+        <div style={{ padding: "12px 14px 20px", minHeight: 200 }}>
           {displayMessages.map((msg, i) => {
             const globalIdx = scrollStart + i;
             const isLatest = globalIdx === latestIdx;
@@ -416,16 +417,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </div>
 
       {/* ── SFX: Intro sounds ── */}
-      {/* Whoosh for character A slide-in */}
-      <Sequence from={Math.round(0.2 * fps)} durationInFrames={Math.round(0.4 * fps)} layout="none">
+      <Sequence from={Math.round(0.1 * fps)} durationInFrames={Math.round(0.3 * fps)} layout="none">
         <Audio src={staticFile("sfx/whoosh.mp3")} volume={0.5} />
       </Sequence>
-      {/* Impact for VS pop */}
-      <Sequence from={Math.round(0.45 * fps)} durationInFrames={Math.round(0.6 * fps)} layout="none">
+      <Sequence from={Math.round(0.25 * fps)} durationInFrames={Math.round(0.4 * fps)} layout="none">
         <Audio src={staticFile("sfx/impact.mp3")} volume={0.6} />
       </Sequence>
-      {/* Whoosh for character B slide-in */}
-      <Sequence from={Math.round(0.6 * fps)} durationInFrames={Math.round(0.4 * fps)} layout="none">
+      <Sequence from={Math.round(0.35 * fps)} durationInFrames={Math.round(0.3 * fps)} layout="none">
         <Audio src={staticFile("sfx/whoosh.mp3")} volume={0.5} />
       </Sequence>
 

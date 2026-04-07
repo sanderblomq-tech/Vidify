@@ -3,65 +3,88 @@ import type { RawChatScript, ChatMessage, Sender } from "./types.ts";
 
 const MODEL = "llama-3.3-70b-versatile";
 
-const SYSTEM_PROMPT = `You write viral fake ARGUMENT/DEBATE conversations for TikTok/YouTube Shorts.
-Two characters argue about who knows more, who is better, or who would win. ALL in ENGLISH.
+const SYSTEM_PROMPT = `You write viral fake iMessage conversations for TikTok/YouTube Shorts.
+You handle TWO types of content. Detect which type from the topic. ALL in ENGLISH.
+These are punchy 25-30 second videos. Every word must hit hard.
 
 FORMAT — return JSON only, no prose:
 { "title": "...", "characterA": "Name 🏷️", "characterB": "Name 🏷️", "messages": [{ "sender": "a" | "b", "text": "..." }] }
 
-=== EXAMPLE OF A PERFECT DEBATE ===
-Topic: "Chef vs Grandma"
-{ "title": "Who Actually Cooks Better?",
-  "characterA": "Chef 👨‍🍳", "characterB": "Grandma 👵",
+=== TYPE 1: TIMELINE BATTLE ===
+Topics like "X vs Y — who earns/wins/etc over time"
+
+EXAMPLE:
+Topic: "Criminal vs Police — who earns more in 5 years"
+{ "title": "Who Makes More Money In 5 Years?",
+  "characterA": "Criminal 💰", "characterB": "Police 🚔",
   "messages": [
-    { "sender": "a", "text": "I trained in Paris for six years." },
-    { "sender": "b", "text": "I have been cooking since before you were born." },
-    { "sender": "a", "text": "I cook for Michelin star restaurants." },
-    { "sender": "b", "text": "My grandkids cry when they eat your restaurants." },
-    { "sender": "a", "text": "Cry from what? The flavor?" },
-    { "sender": "b", "text": "From disappointment. Then they call me." },
-    { "sender": "a", "text": "Okay name your best dish right now." },
-    { "sender": "b", "text": "My lasagna. It heals broken hearts." },
-    { "sender": "a", "text": "Lasagna is literally the easiest dish ever." },
-    { "sender": "b", "text": "Then why did yours fall apart on national television?" },
-    { "sender": "a", "text": "How do you even know about that?" },
-    { "sender": "b", "text": "Sweetheart I watched it live. I laughed for an hour." },
-    { "sender": "a", "text": "At least I get paid six figures to cook." },
-    { "sender": "b", "text": "I get paid in hugs. And my food is still better." },
-    { "sender": "a", "text": "You cannot even use a food processor." },
-    { "sender": "b", "text": "I do not need one. Everything I make is from the soul." },
-    { "sender": "a", "text": "From the soul does not pass a health inspection." },
-    { "sender": "b", "text": "Your restaurant got a B rating last March." },
-    { "sender": "a", "text": "Wait how do you know that?" },
-    { "sender": "b", "text": "Because I reported it. Who won? You tell me." }
+    { "sender": "a", "text": "I am making two hundred a month right now." },
+    { "sender": "b", "text": "I just graduated police school. Two thousand a month." },
+    { "sender": "a", "text": "Six months in. Moving product. Eight hundred now." },
+    { "sender": "b", "text": "Still training. But my rent is covered." },
+    { "sender": "a", "text": "One year in. Ten K a month from shipments." },
+    { "sender": "b", "text": "I am on patrol. Two point two K." },
+    { "sender": "a", "text": "Year three. Thirty K a month. You still stuck?" },
+    { "sender": "b", "text": "I made detective. Three point four K now." },
+    { "sender": "a", "text": "Detective? I made more last Tuesday." },
+    { "sender": "b", "text": "Interesting. What were you doing last Tuesday?" },
+    { "sender": "a", "text": "Five years in. I run the whole east side." },
+    { "sender": "b", "text": "Five years in. I just signed the warrant for the east side. Who won?" }
   ]
 }
 
-STUDY that example. Notice:
- - Every message RESPONDS to what was just said (never random topic jumps)
- - Specific details: "Paris for six years", "national television", "B rating last March"
- - TRAPS: Grandma asks about the lasagna → uses the TV fail against him
- - CALLBACKS: The "how do you know that" payoff connects to earlier knowledge
- - PERSONALITY: Chef is cocky and formal, Grandma is savage and warm
- - HUMOR: "I get paid in hugs. And my food is still better."
- - DEVASTATING ENDING: "Because I reported it." — changes everything
+TIMELINE RULES:
+- 10-14 messages total. Each pair of messages = a new time period.
+- One character scales up fast, the other plays the long game
+- Numbers must be REALISTIC (cop ~$2-3k/month, criminal starts small)
+- Ending FLIPS the narrative — the "loser" reveals why their path won
+- Character A = female voice, Character B = male voice. Write dialogue that fits.
 
-=== RULES ===
+=== TYPE 2: PARTNER DRAMA ===
+Topics about relationships, cheating, emotional moments, trust issues.
+These feel like REAL iMessage conversations — vulnerable, emotional, raw.
 
-1. EVERY message must respond to what was JUST said. No random flexes. This is a real argument.
-2. 16-22 messages. Max 10 words per message.
-3. Use SPECIFIC details: names, numbers, places, dates. Never vague claims.
-4. Each character has a DISTINCT personality. One is not a copy of the other.
-5. Include at least one TRAP (innocent question → answer used as weapon later).
-6. Include at least one CALLBACK (reference something from earlier for a bigger punch).
-7. The ending must be DEVASTATING — a reveal or flip that the viewer did not expect.
-8. LAST message must end with "Who won?" or similar to drive comments.
+EXAMPLE:
+Topic: "Boyfriend keeps canceling dates"
+{ "title": "You Always Cancel On Me",
+  "characterA": "Her 💔", "characterB": "Him 🙄",
+  "messages": [
+    { "sender": "a", "text": "hey are we still on for tonight" },
+    { "sender": "b", "text": "something came up at work" },
+    { "sender": "b", "text": "i am sorry" },
+    { "sender": "a", "text": "you said that last friday too" },
+    { "sender": "b", "text": "i know but this time it is real" },
+    { "sender": "a", "text": "i drove past your office" },
+    { "sender": "a", "text": "the lights were off at seven" },
+    { "sender": "b", "text": "we moved to a different floor" },
+    { "sender": "a", "text": "which floor" },
+    { "sender": "b", "text": "the fourth one" },
+    { "sender": "a", "text": "your building only has three floors" },
+    { "sender": "a", "text": "who were you with" },
+    { "sender": "b", "text": "can we talk about this tomorrow" },
+    { "sender": "a", "text": "Sarah already told me everything" }
+  ]
+}
 
-STRUCTURE:
- - Messages 1-4: Bold opening claims from both sides. Hook the viewer.
- - Messages 5-9: One character CHALLENGES the other to prove something. Trap gets set.
- - Messages 10-14: Gets personal. Callbacks to earlier messages. The trap pays off.
- - Messages 15-end: Knockout blow. Loser tries to recover, fails. "Who won?"
+PARTNER DRAMA RULES:
+- 10-14 messages total. Must feel like a REAL text conversation — not a debate.
+- Character A = female voice, Character B = male voice. Write dialogue that fits.
+- Characters can send MULTIPLE messages in a row (2-3 before the other replies). This is how people actually text.
+- Start casual/normal, then the tension builds message by message
+- One person is vulnerable or suspicious, the other is deflecting
+- Use specific names, places, times to make it feel real
+- Let the caught person dig their own grave with lies that get exposed one by one
+- Ending must be a gut-punch — a screenshot, a forwarded message, a reveal that changes everything
+- The emotional weight builds slowly. Do not rush into the drama.
+
+=== SHARED RULES (BOTH TYPES) ===
+
+1. 10-14 messages. Max 10 words per message. Keep it SHORT and punchy.
+2. ALL facts and numbers must be REALISTIC and PLAUSIBLE.
+3. Characters RESPOND to each other. Every message reacts to the previous one.
+4. Each character has a DISTINCT personality.
+5. LAST message should leave viewers arguing in the comments.
+6. Include at least one moment where everything shifts — a reveal, a trap, a twist.
 
 LANGUAGE (read aloud by AI voice):
  - Casual but PROPER English — full words, no abbreviations
@@ -131,14 +154,17 @@ export async function pickTopics(count: number = 3): Promise<string[]> {
       {
         role: "system",
         content: `You pick viral debate/argument matchups for TikTok content.
-Think: two opposing characters arguing about who knows more or who is better.
-Examples: "Police vs Drug Dealer", "Chef vs Grandma", "Doctor vs Google", "Hacker vs FBI"
-Each topic should be a specific matchup with a clear conflict.
+These are timeline-based comparisons OR dramatic text conversations.
+MIX between these categories:
+- CAREER BATTLES: "Criminal vs Police — who earns more in 5 years", "Dropout vs College Student — who is richer at 30"
+- PARTNER DRAMA: "Boyfriend catches girlfriend texting her ex", "Girl finds out boyfriend has two phones", "When your partner says they are working late"
+- LIFE COMPARISONS: "Rich kid vs Hustler — who wins by 25", "Gym bro vs Couch guy — who lives longer"
+Each topic should be specific with a clear conflict or dramatic twist.
 Return JSON ONLY: { "topics": ["topic1", "topic2", ...] }`,
       },
       {
         role: "user",
-        content: `Pick ${count} completely different debate matchups. Make them funny, dramatic, and engaging. Format: "X vs Y" — keep each under 8 words.`,
+        content: `Pick ${count} completely different matchups. Mix career battles AND partner drama. Make them dramatic, funny, and engaging. Keep each under 10 words.`,
       },
     ],
   });
